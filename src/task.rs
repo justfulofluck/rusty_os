@@ -102,15 +102,15 @@ impl TaskControlBlock {
     }
 }
 
-#[naked]
+use core::arch::naked_asm;
+#[unsafe(naked)]
 #[no_mangle]
 pub unsafe extern "C" fn switch_context(current_sp: *mut usize, next_sp: *const usize) {
     naked_asm!(
         // staack allotment provide 128 bits
         "addi sp, sp, -128",
-
         //to save return and register address
-        "sw ra, 0(sp)"
+        "sw ra, 0(sp)",
         "sw t0, 4(sp)",
         "sw t1, 8(sp)",
         "sw t2, 12(sp)",
@@ -138,13 +138,10 @@ pub unsafe extern "C" fn switch_context(current_sp: *mut usize, next_sp: *const 
         "sw t4, 100(sp)",
         "sw t5, 104(sp)",
         "sw t6, 108(sp)",
-
         // 3. to save current stack pointer in *current_sp (a0)
         "sw sp, 0(a0)",
-
         // 4. Next Task ka Stack Pointer load karein next_sp (a1) se
         "lw sp, 0(a1)",
-
         // 5. to register a new task
         "lw ra, 0(sp)",
         "lw t0, 4(sp)",
@@ -174,10 +171,8 @@ pub unsafe extern "C" fn switch_context(current_sp: *mut usize, next_sp: *const 
         "lw t4, 100(sp)",
         "lw t5, 104(sp)",
         "lw t6, 108(sp)",
-
         // 6. Stack pointer deallocate karein
         "addi sp, sp, 128",
-
         // 7. Naye task ke ra (Return Address) par jump karein
         "ret"
     )
