@@ -1,0 +1,16 @@
+Agar ESP32-C3 ya C6 (RISC-V) hai, toh standard Rust toolchain se hi kaam chal jayega.
+
+for windows
+rustup target add riscv32imc-unknown-none-elf
+
+
+Option 2: Wokwi Simulator (Sabse Easy aur Interactive)
+Wokwi ESP32-C3 ka complete cycle-accurate browser/VS Code simulator provide karta hai.
+
+VS Code Extension: VS Code mein Wokwi Simulator extension install karein.
+
+Yeh aapke Rust ELF binary ko seedha simulate karta hai.
+
+Virtual UART/Serial output seedha terminal par dikhta hai.
+
+Even virtual Wi-Fi aur virtual LEDs/buttons bhi attach kar sakte hain.
