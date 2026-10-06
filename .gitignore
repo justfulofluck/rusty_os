@@ -1,2 +1,13 @@
+# Rust build artifacts
 **/target/
 *.pdb
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
