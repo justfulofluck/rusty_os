@@ -1,57 +1,54 @@
+// src/main.rs
 #![no_std]
 #![no_main]
 
 mod scheduler;
 mod task;
+mod timer;
 
+use core::default::Default;
 use esp_backtrace as _;
 use esp_hal::prelude::*;
 use esp_println::println;
-use scheduler::{task_yield, SCHEDULER};
-use task::{switch_context, TaskControlBlock};
+use scheduler::SCHEDULER;
+use task::TaskControlBlock;
 
 static mut TASK1_STACK: [u8; 2048] = [0; 2048];
 static mut TASK2_STACK: [u8; 2048] = [0; 2048];
 
-fn task_one() -> ! {
-    let mut count: u32 = 0;
-    loop {
-        println!("[Task 1] Running... Iteration: {}", count);
-        count += 1;
+pub static mut TASK1_RUN_COUNT: u32 = 0;
+pub static mut TASK2_RUN_COUNT: u32 = 0;
 
-        // Simulate work with bu7sy delay
-        for _ in 0..1_000_000 {
+fn task_one() -> ! {
+    loop {
+        unsafe {
+            TASK1_RUN_COUNT = TASK1_RUN_COUNT.wrapping_add(1);
+        }
+        for _ in 0..50_000 {
             core::hint::black_box(());
         }
-
-        println!("[Task 1] Yielding CPU to Task 2 ->");
-        task_yield();
     }
 }
 
 fn task_two() -> ! {
-    let mut count: u32 = 0;
     loop {
-        println!("[Task 2] Running... Iteration: {}", count);
-        count += 1;
-
-        for _ in 0..1_000_000 {
+        unsafe {
+            TASK2_RUN_COUNT = TASK2_RUN_COUNT.wrapping_add(1);
+        }
+        for _ in 0..50_000 {
             core::hint::black_box(());
         }
-
-        println!("[Task 2] Yielding CPU to Task 1 ->")
     }
 }
 
 #[entry]
 fn main() -> ! {
-    let _peripherals = esp_hal::init(esp_hal::Config::default());
+    let peripherals = esp_hal::init(esp_hal::Config::default());
 
     println!("=========================================");
-    println!("  RustyOS: Phase 3 Round-Robin Scheduler ");
+    println!("  RustyOS: Phase 4 Preemption Engine     ");
     println!("=========================================");
 
-    // 1 TASK INISIATE
     let stack1_top = core::ptr::addr_of_mut!(TASK1_STACK) as usize + 2048;
     let stack2_top = core::ptr::addr_of_mut!(TASK2_STACK) as usize + 2048;
 
@@ -64,13 +61,17 @@ fn main() -> ! {
         (*sched).add_task(tcb2);
     }
 
-    println!("Task registered. Starting Task 1...");
-
-    let mut main_sp: usize = 0;
-    let first_task_sp = unsafe { SCHEDULER.tasks[0].as_ref().unwrap().sp };
+    timer::init_systick(peripherals.TIMG0);
 
     unsafe {
-        switch_context(&raw mut main_sp, &first_task_sp);
+        esp_hal::riscv::interrupt::enable();
+    }
+
+    println!("Timer Armed! Starting Preemptive Multitasking...");
+
+    unsafe {
+        let sched = &raw mut SCHEDULER;
+        (*sched).start();
     }
 
     loop {}

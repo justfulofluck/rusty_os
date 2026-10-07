@@ -28,6 +28,21 @@ impl Scheduler {
         }
     }
 
+    pub fn start(&mut self) {
+        assert!(self.task_count > 0, "No tasks to register");
+        self.current = 0;
+        self.tasks[0].as_mut().unwrap().state = TaskState::Running;
+
+        let next_sp = self.tasks[1].as_ref().unwrap().sp;
+        let mut dummy_sp: usize = 0;
+
+        unsafe {
+            switch_context(&mut dummy_sp, &next_sp);
+        }
+
+        loop {}
+    }
+
     //  to find next ready task for round robin
     pub fn schedule_next(&mut self) {
         if self.task_count < 2 {

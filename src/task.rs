@@ -174,6 +174,7 @@ pub unsafe extern "C" fn switch_context(current_sp: *mut usize, next_sp: *const 
         // 6. Stack pointer deallocate karein
         "addi sp, sp, 128",
         // 7. Naye task ke ra (Return Address) par jump karein
+        "csrs mstatus, 8",
         "ret"
     )
 }
